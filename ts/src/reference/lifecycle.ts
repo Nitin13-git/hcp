@@ -15,6 +15,7 @@ export class FileLifecycle implements SessionLifecycle {
   init(task: string): SessionHandle {
     const handle: SessionHandle = { session_id: randomUUID(), task };
     this.state.write(`session:${handle.session_id}:status`, "init", "hcp.lifecycle");
+    this.state.write(`session:${handle.session_id}:task`, task, "hcp.lifecycle");
     return handle;
   }
 
@@ -35,4 +36,19 @@ export class FileLifecycle implements SessionLifecycle {
       "hcp.lifecycle",
     );
   }
+}
+
+/**
+ * Reconstruct a SessionHandle for a session started elsewhere.
+ *
+ * Works across processes, and across language implementations, as long
+ * as both read the same StateStore — the handle's `task` is read back
+ * from the record `init` wrote, not passed in out-of-band.
+ */
+export function resume(state: StateStore, sessionId: string): SessionHandle {
+  const record = state.read(`session:${sessionId}:task`);
+  if (record === null) {
+    throw new Error(`no session found with id ${sessionId}`);
+  }
+  return { session_id: sessionId, task: record.value as string };
 }

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hcp.reference import FileLifecycle, JsonFileStateStore, SubprocessVerifier, TableScopeEnforcer
+from hcp.reference import FileLifecycle, JsonFileStateStore, SubprocessVerifier, TableScopeEnforcer, resume
 from hcp.scope import Capability, CapabilityKind
 
 
@@ -54,3 +54,25 @@ def test_lifecycle_records_status_transitions(tmp_path: Path) -> None:
     history = store.history(f"session:{handle.session_id}:status")
     assert [r.value for r in history][0] == "init"
     assert history[-1].value == "teardown:done"
+
+
+def test_resume_reconstructs_handle_from_state_alone(tmp_path: Path) -> None:
+    store = JsonFileStateStore(tmp_path / "state.json")
+    lifecycle = FileLifecycle(store)
+    original = lifecycle.init("investigate the login endpoint")
+
+    # A different process, knowing only the session id, reconstructs the
+    # same handle purely from what's in the store — no out-of-band task.
+    resumed = resume(store, original.session_id)
+
+    assert resumed.session_id == original.session_id
+    assert resumed.task == original.task == "investigate the login endpoint"
+
+
+def test_resume_raises_for_unknown_session(tmp_path: Path) -> None:
+    store = JsonFileStateStore(tmp_path / "state.json")
+    try:
+        resume(store, "does-not-exist")
+        assert False, "expected KeyError"
+    except KeyError:
+        pass

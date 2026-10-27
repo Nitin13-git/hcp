@@ -9,6 +9,7 @@ import {
   SubprocessVerifier,
   TableScopeEnforcer,
   FileLifecycle,
+  resume,
 } from "../src/reference/index.js";
 
 function tmpStatePath(): string {
@@ -65,4 +66,21 @@ test("lifecycle records status transitions", () => {
   const history = store.history(`session:${handle.session_id}:status`);
   assert.equal(history[0].value, "init");
   assert.equal(history[history.length - 1].value, "teardown:done");
+});
+
+test("resume reconstructs handle from state alone", () => {
+  const store = new JsonFileStateStore(tmpStatePath());
+  const lifecycle = new FileLifecycle(store);
+  const original = lifecycle.init("investigate the login endpoint");
+
+  const resumed = resume(store, original.session_id);
+
+  assert.equal(resumed.session_id, original.session_id);
+  assert.equal(resumed.task, original.task);
+  assert.equal(resumed.task, "investigate the login endpoint");
+});
+
+test("resume throws for unknown session", () => {
+  const store = new JsonFileStateStore(tmpStatePath());
+  assert.throws(() => resume(store, "does-not-exist"));
 });
