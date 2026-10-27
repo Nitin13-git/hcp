@@ -41,8 +41,7 @@ Promise<VerificationReport>` to accommodate that without changing
 ## Quickstart
 
 ```bash
-npm install
-npm test
+npm install hcp-protocol
 ```
 
 ```typescript
@@ -51,8 +50,8 @@ import {
   SubprocessVerifier,
   TableScopeEnforcer,
   FileLifecycle,
-} from "hcp/reference";
-import { validate } from "hcp";
+} from "hcp-protocol/reference";
+import { validate } from "hcp-protocol";
 
 const state = new JsonFileStateStore("state.json");
 const harness = {
@@ -66,12 +65,22 @@ const report = validate(harness);
 console.assert(report.conformant);
 ```
 
+## Development setup
+
+```bash
+npm install
+npm test
+```
+
 ## Status
 
 v0.1, same as the Python SDK — interfaces are the contract, reference
-implementations are intentionally minimal and meant to be replaced. No
-cross-language interop test exists yet between this package and the Python
-SDK; that's the natural next step, not yet built.
+implementations are intentionally minimal and meant to be replaced.
+[`interop/`](https://github.com/Nitin13-git/hcp/tree/main/interop) now
+proves cross-language interop for all four interfaces against the Python
+SDK — a real session hand-off (state + lifecycle), plus a Scope grant and
+Verifier reports that round-trip and get independently re-evaluated by
+this package, not just echoed back.
 
 ## License
 
