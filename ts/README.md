@@ -1,6 +1,6 @@
 # HCP — TypeScript reference SDK
 
-The same Harness Context Protocol as the [Python SDK](../README.md), ported
+The same Harness Context Protocol as the [Python SDK](https://github.com/Nitin13-git/hcp), ported
 to TypeScript: four interfaces (state, verification, scope, lifecycle), a
 minimal reference implementation of each, and a conformance validator.
 

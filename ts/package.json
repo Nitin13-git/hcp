@@ -1,6 +1,6 @@
 {
   "name": "hcp-protocol",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Harness Context Protocol — a standard interface for agent harness state, verification, scope, and session lifecycle (TypeScript reference SDK).",
   "license": "MIT",
   "type": "module",
