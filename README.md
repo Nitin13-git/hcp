@@ -6,21 +6,23 @@ verification that doesn't trust the agent's own report, least-privilege
 scope, and a session lifecycle that survives a process restart.
 
 ```bash
-pip install "git+https://github.com/Nitin13-git/hcp.git" && python -m hcp.demo
+pip install hcp-protocol && python -m hcp.demo
 ```
 
-![All four HCP subsystems running for real, in under a second](assets/demo.gif)
+![All four HCP subsystems running for real, in under a second](https://raw.githubusercontent.com/Nitin13-git/hcp/main/assets/demo.gif)
 
 That's real code, not staged output — scope denying by default, a false
 claim caught by independent verification next to a real fix that passes,
 and a brand-new process recovering a session's task and findings given
-nothing but a session id. Source: [`src/hcp/demo.py`](src/hcp/demo.py).
+nothing but a session id. Source: [`src/hcp/demo.py`](https://github.com/Nitin13-git/hcp/blob/main/src/hcp/demo.py).
 
-Full spec: [`spec/SPEC.md`](spec/SPEC.md). Two reference SDKs: Python (this
-directory) and [TypeScript](ts/) — both implement the same four interfaces
-against the same JSON wire format, so a state file is byte-identical in
-shape regardless of which SDK wrote it, and [`interop/`](interop/) proves
-a session can actually hand off between them.
+Full spec: [`spec/SPEC.md`](https://github.com/Nitin13-git/hcp/blob/main/spec/SPEC.md).
+Two reference SDKs: Python (this package) and
+[TypeScript](https://github.com/Nitin13-git/hcp/tree/main/ts) — both
+implement the same four interfaces against the same JSON wire format, so a
+state file is byte-identical in shape regardless of which SDK wrote it, and
+[`interop/`](https://github.com/Nitin13-git/hcp/tree/main/interop) proves a
+session can actually hand off between them.
 
 ## The four interfaces
 
@@ -71,13 +73,15 @@ are intentionally minimal and meant to be replaced (a git-backed
 `StateStore`, a sandboxed `ScopeEnforcer`, a CI-integrated `Verifier`, etc.)
 without breaking anything that depends on the interface alone.
 
-The [TypeScript SDK](ts/) mirrors this one field-for-field on the wire
-(snake_case `duration_s`, `session_id`, etc., even though that's not
-idiomatic TS) but checks conformance differently: Python's `validate()`
-does a nominal `isinstance` check via ABCs; TypeScript's does structural
-duck-typing, since interfaces are erased at runtime.
+The [TypeScript SDK](https://github.com/Nitin13-git/hcp/tree/main/ts)
+mirrors this one field-for-field on the wire (snake_case `duration_s`,
+`session_id`, etc., even though that's not idiomatic TS) but checks
+conformance differently: Python's `validate()` does a nominal `isinstance`
+check via ABCs; TypeScript's does structural duck-typing, since interfaces
+are erased at runtime.
 
-[`interop/`](interop/) now proves cross-language interop for **all four**
+[`interop/`](https://github.com/Nitin13-git/hcp/tree/main/interop) now
+proves cross-language interop for **all four**
 interfaces, not just two: steps 1-3 hand off a real session between
 Python and Node.js through nothing but shared `state.json` (`StateStore`,
 `SessionLifecycle`); steps 4-5 have Python grant a `Scope` and run real
