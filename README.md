@@ -60,10 +60,16 @@ The [TypeScript SDK](ts/) mirrors this one field-for-field on the wire
 (snake_case `duration_s`, `session_id`, etc., even though that's not
 idiomatic TS) but checks conformance differently: Python's `validate()`
 does a nominal `isinstance` check via ABCs; TypeScript's does structural
-duck-typing, since interfaces are erased at runtime. No test yet proves a
-session can actually hand off between the two language implementations
-through a shared `StateStore` — that's the real next step for calling this
-a protocol rather than two parallel libraries.
+duck-typing, since interfaces are erased at runtime.
+
+[`interop/`](interop/) now proves a session actually hands off between the
+two language implementations: Python starts one, Node.js resumes and
+continues it through nothing but the shared `state.json`, Python resumes a
+second time to verify both languages' writes and tear it down. That's
+proven for `StateStore` and `SessionLifecycle` specifically — `ScopeEnforcer`
+and `Verifier` aren't exercised by that scenario yet, so "fully
+cross-language" isn't proven for all four interfaces, just the two this
+handoff actually needed.
 
 ## License
 
