@@ -6,7 +6,10 @@ window, how work gets independently verified instead of self-reported, how
 least-privilege scope is computed and enforced per task, and how a session's
 init/checkpoint/teardown lifecycle composes across tools.
 
-Full spec: [`spec/SPEC.md`](spec/SPEC.md).
+Full spec: [`spec/SPEC.md`](spec/SPEC.md). Two reference SDKs: Python (this
+directory) and [TypeScript](ts/) — both implement the same four interfaces
+against the same JSON wire format, so a state file is byte-identical in
+shape regardless of which SDK wrote it.
 
 ## The four interfaces
 
@@ -52,6 +55,15 @@ v0.1 draft. The interfaces are the contract; the reference implementations
 are intentionally minimal and meant to be replaced (a git-backed
 `StateStore`, a sandboxed `ScopeEnforcer`, a CI-integrated `Verifier`, etc.)
 without breaking anything that depends on the interface alone.
+
+The [TypeScript SDK](ts/) mirrors this one field-for-field on the wire
+(snake_case `duration_s`, `session_id`, etc., even though that's not
+idiomatic TS) but checks conformance differently: Python's `validate()`
+does a nominal `isinstance` check via ABCs; TypeScript's does structural
+duck-typing, since interfaces are erased at runtime. No test yet proves a
+session can actually hand off between the two language implementations
+through a shared `StateStore` — that's the real next step for calling this
+a protocol rather than two parallel libraries.
 
 ## License
 
