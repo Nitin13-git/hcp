@@ -77,14 +77,16 @@ idiomatic TS) but checks conformance differently: Python's `validate()`
 does a nominal `isinstance` check via ABCs; TypeScript's does structural
 duck-typing, since interfaces are erased at runtime.
 
-[`interop/`](interop/) now proves a session actually hands off between the
-two language implementations: Python starts one, Node.js resumes and
-continues it through nothing but the shared `state.json`, Python resumes a
-second time to verify both languages' writes and tear it down. That's
-proven for `StateStore` and `SessionLifecycle` specifically — `ScopeEnforcer`
-and `Verifier` aren't exercised by that scenario yet, so "fully
-cross-language" isn't proven for all four interfaces, just the two this
-handoff actually needed.
+[`interop/`](interop/) now proves cross-language interop for **all four**
+interfaces, not just two: steps 1-3 hand off a real session between
+Python and Node.js through nothing but shared `state.json` (`StateStore`,
+`SessionLifecycle`); steps 4-5 have Python grant a `Scope` and run real
+`Verifier` checks, then have Node independently reconstruct the scope and
+re-evaluate it — including a check Python's script never ran — and assert
+both `VerificationReport`s decode with the right types. What's still open:
+interop across different agent *runtimes*, not just these two reference
+SDKs of the same protocol (see Open Problem #4 in the
+[course site](https://nitin13-git.github.io/learn-harness-security/open-problems/)).
 
 ## License
 
