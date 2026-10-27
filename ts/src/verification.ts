@@ -12,5 +12,14 @@ export interface VerificationReport {
 }
 
 export interface Verifier {
-  run(target: string): VerificationReport;
+  /**
+   * Returns a VerificationReport, or a Promise of one.
+   *
+   * Widened from a plain VerificationReport to accommodate verifiers that
+   * are inherently async in Node (an HTTP check, for instance) without
+   * forcing synchronous ones (SubprocessVerifier) to change at all — a
+   * sync return value is already assignable to this union, so existing
+   * implementations and their call sites are unaffected.
+   */
+  run(target: string): VerificationReport | Promise<VerificationReport>;
 }
