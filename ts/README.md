@@ -27,6 +27,17 @@ validators answer "does this object fulfill the contract," but by
 genuinely different mechanisms — documented here rather than presented as
 if the two SDKs work identically under the hood.
 
+## Two reference verifiers
+
+`SubprocessVerifier` runs a local command and checks its exit status — good
+for "does the test suite pass." `HttpVerifier` hits a live endpoint and
+checks its status code and (optionally) response body — good for "did the
+patched service actually stop leaking data." `HttpVerifier.run` returns a
+`Promise<VerificationReport>`, since HTTP requests are inherently async in
+Node; `Verifier.run`'s return type is `VerificationReport |
+Promise<VerificationReport>` to accommodate that without changing
+`SubprocessVerifier` or any existing sync call site at all.
+
 ## Quickstart
 
 ```bash
