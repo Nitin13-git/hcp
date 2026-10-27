@@ -1,15 +1,26 @@
 # HCP — Harness Context Protocol
 
 MCP standardized how an agent talks to a *tool*. HCP standardizes the
-*harness* around the agent: how a session's state outlives the context
-window, how work gets independently verified instead of self-reported, how
-least-privilege scope is computed and enforced per task, and how a session's
-init/checkpoint/teardown lifecycle composes across tools.
+*harness* around the agent: state that outlives the context window,
+verification that doesn't trust the agent's own report, least-privilege
+scope, and a session lifecycle that survives a process restart.
+
+```bash
+pip install "git+https://github.com/Nitin13-git/hcp.git" && python -m hcp.demo
+```
+
+![All four HCP subsystems running for real, in under a second](assets/demo.gif)
+
+That's real code, not staged output — scope denying by default, a false
+claim caught by independent verification next to a real fix that passes,
+and a brand-new process recovering a session's task and findings given
+nothing but a session id. Source: [`src/hcp/demo.py`](src/hcp/demo.py).
 
 Full spec: [`spec/SPEC.md`](spec/SPEC.md). Two reference SDKs: Python (this
 directory) and [TypeScript](ts/) — both implement the same four interfaces
 against the same JSON wire format, so a state file is byte-identical in
-shape regardless of which SDK wrote it.
+shape regardless of which SDK wrote it, and [`interop/`](interop/) proves
+a session can actually hand off between them.
 
 ## The four interfaces
 
@@ -25,7 +36,7 @@ Each is an abstract interface with one reference implementation under
 in-memory scope table, and a lifecycle built on top of the state store.
 Swap any of them out without touching the others.
 
-## Quickstart
+## Development setup
 
 ```bash
 pip install -e ".[dev]"
