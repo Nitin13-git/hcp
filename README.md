@@ -1,5 +1,8 @@
 # HCP — Harness Context Protocol
 
+[![PyPI](https://img.shields.io/pypi/v/hcp-protocol?label=PyPI&color=3775A9)](https://pypi.org/project/hcp-protocol/)
+[![npm](https://img.shields.io/npm/v/hcp-protocol?label=npm&color=CB3837)](https://www.npmjs.com/package/hcp-protocol)
+
 MCP standardized how an agent talks to a *tool*. HCP standardizes the
 *harness* around the agent: state that outlives the context window,
 verification that doesn't trust the agent's own report, least-privilege
@@ -8,6 +11,8 @@ scope, and a session lifecycle that survives a process restart.
 ```bash
 pip install hcp-protocol && python -m hcp.demo
 ```
+
+TypeScript SDK: `npm install hcp-protocol` ([docs](https://github.com/Nitin13-git/hcp/tree/main/ts)).
 
 ![All four HCP subsystems running for real, in under a second](https://raw.githubusercontent.com/Nitin13-git/hcp/main/assets/demo.gif)
 
