@@ -47,6 +47,22 @@ test("scope allows granted pattern", () => {
   assert.equal(scope.check({ kind: "path", pattern: "/etc/passwd" }), false);
 });
 
+test("scope round-trips through exported capability JSON", () => {
+  const scope = new TableScopeEnforcer();
+  scope.grant({ kind: "path", pattern: "/workspace/*" });
+  scope.grant({ kind: "command", pattern: "pytest" });
+
+  // Simulate crossing a language boundary: serialize to JSON text and
+  // parse it back, exactly as reading it out of a shared state.json would.
+  const exported = JSON.parse(JSON.stringify(scope.activeScope()));
+
+  const rebuilt = TableScopeEnforcer.fromCapabilities(exported);
+  assert.equal(rebuilt.check({ kind: "path", pattern: "/workspace/report.md" }), true);
+  assert.equal(rebuilt.check({ kind: "command", pattern: "pytest" }), true);
+  assert.equal(rebuilt.check({ kind: "path", pattern: "/etc/passwd" }), false);
+  assert.equal(rebuilt.check({ kind: "command", pattern: "rm" }), false);
+});
+
 test("verifier reports pass and fail", () => {
   const verifier = new SubprocessVerifier();
   const ok = verifier.run("true");

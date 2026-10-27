@@ -45,4 +45,21 @@ export class TableScopeEnforcer implements ScopeEnforcer {
   activeScope(): Capability[] {
     return [...this.granted];
   }
+
+  /**
+   * Reconstruct a scope from a previously-exported capability list.
+   *
+   * `Capability` is already a flat (kind, pattern) record with no enum
+   * boxing in TypeScript, so `JSON.parse` of what Python exported is
+   * already a valid `Capability[]` — this is just the convenience
+   * constructor, not a decode step. See `hcp/interop/` for this used to
+   * reconstruct a scope granted by a different language.
+   */
+  static fromCapabilities(capabilities: Capability[]): TableScopeEnforcer {
+    const scope = new TableScopeEnforcer();
+    for (const capability of capabilities) {
+      scope.grant(capability);
+    }
+    return scope;
+  }
 }

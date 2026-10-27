@@ -35,6 +35,23 @@ def test_scope_allows_granted_pattern() -> None:
     assert not scope.check(Capability(kind=CapabilityKind.PATH, pattern="/etc/passwd"))
 
 
+def test_scope_round_trips_through_capability_dicts() -> None:
+    scope = TableScopeEnforcer()
+    scope.grant(Capability(kind=CapabilityKind.PATH, pattern="/workspace/*"))
+    scope.grant(Capability(kind=CapabilityKind.COMMAND, pattern="pytest"))
+
+    # Plain string dicts, as they'd look after a JSON round trip through a
+    # StateStore (or after crossing a language boundary) — not Capability
+    # instances, deliberately, to exercise the actual decode path.
+    exported = [{"kind": c.kind.value, "pattern": c.pattern} for c in scope.active_scope()]
+
+    rebuilt = TableScopeEnforcer.from_capability_dicts(exported)
+    assert rebuilt.check(Capability(kind=CapabilityKind.PATH, pattern="/workspace/report.md"))
+    assert rebuilt.check(Capability(kind=CapabilityKind.COMMAND, pattern="pytest"))
+    assert not rebuilt.check(Capability(kind=CapabilityKind.PATH, pattern="/etc/passwd"))
+    assert not rebuilt.check(Capability(kind=CapabilityKind.COMMAND, pattern="rm"))
+
+
 def test_verifier_reports_pass_and_fail() -> None:
     verifier = SubprocessVerifier()
     ok = verifier.run("true")
