@@ -31,10 +31,14 @@ a session can actually hand off between them.
 | Scope | `hcp.scope.ScopeEnforcer` | What is this session allowed to touch, and who enforces it? |
 | Lifecycle | `hcp.lifecycle.SessionLifecycle` | How does a session start, checkpoint, and end? |
 
-Each is an abstract interface with one reference implementation under
-`hcp.reference` — a local JSON file store, a subprocess-based verifier, an
-in-memory scope table, and a lifecycle built on top of the state store.
-Swap any of them out without touching the others.
+Each is an abstract interface with reference implementations under
+`hcp.reference` — a local JSON file store, an in-memory scope table, a
+lifecycle built on top of the state store, and **two** verifiers:
+`SubprocessVerifier` (run a local command, check its exit status — good
+for "does the test suite pass") and `HttpVerifier` (hit a live endpoint,
+check its status and response body — good for "did the patched service
+actually stop leaking data"). Swap any of them out without touching the
+others.
 
 ## Development setup
 
