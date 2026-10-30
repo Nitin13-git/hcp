@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from hcp.verification import VerificationReport, Verifier
@@ -38,6 +39,20 @@ class HttpVerifier(Verifier):
 
     def run(self, target: str) -> VerificationReport:
         start = time.monotonic()
+        try:
+            scheme = urllib.parse.urlsplit(target).scheme.lower()
+        except ValueError as exc:
+            return VerificationReport(
+                passed=False,
+                evidence=f"malformed URL: {exc}"[: self._evidence_limit],
+                duration_s=time.monotonic() - start,
+            )
+        if scheme not in ("http", "https"):
+            return VerificationReport(
+                passed=False,
+                evidence=f"unsupported URL scheme {scheme!r}: only http and https are allowed",
+                duration_s=time.monotonic() - start,
+            )
         try:
             request = urllib.request.Request(target, method="GET")
             with urllib.request.urlopen(request, timeout=self._timeout_s) as response:

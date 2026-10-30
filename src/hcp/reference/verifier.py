@@ -33,5 +33,8 @@ class SubprocessVerifier(Verifier):
         except subprocess.TimeoutExpired as exc:
             passed = False
             evidence = f"timed out after {self._timeout_s}s: {exc}"
+        except OSError as exc:
+            passed = False
+            evidence = f"could not run command: {exc}"[: self._evidence_limit]
         duration_s = time.monotonic() - start
         return VerificationReport(passed=passed, evidence=evidence, duration_s=duration_s)
