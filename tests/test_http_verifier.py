@@ -72,3 +72,16 @@ def test_fails_when_nothing_is_listening() -> None:
     report = verifier.run("http://127.0.0.1:1/unreachable")
     assert report.passed is False
     assert "request failed" in report.evidence
+
+
+@pytest.mark.parametrize("target", ["file:///etc/hosts", "ftp://example.com/flag", "gopher://example.com/"])
+def test_rejects_non_http_schemes_without_requesting(target: str) -> None:
+    report = HttpVerifier(expected_status=200).run(target)
+    assert report.passed is False
+    assert target.split(":", 1)[0] in report.evidence
+    assert "# Host Database" not in report.evidence
+
+
+def test_malformed_url_is_a_failed_report_not_an_exception() -> None:
+    report = HttpVerifier(expected_status=200).run("http://[::1")
+    assert report.passed is False

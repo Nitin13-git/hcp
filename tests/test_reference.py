@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from hcp.reference import FileLifecycle, JsonFileStateStore, SubprocessVerifier, TableScopeEnforcer, resume
 from hcp.scope import Capability, CapabilityKind
 
@@ -93,3 +95,31 @@ def test_resume_raises_for_unknown_session(tmp_path: Path) -> None:
         assert False, "expected KeyError"
     except KeyError:
         pass
+
+
+def test_subprocess_verifier_reports_missing_command_as_failure() -> None:
+    report = SubprocessVerifier().run("definitely-not-a-real-cmd-hcp --x")
+    assert report.passed is False
+    assert "definitely-not-a-real-cmd-hcp" in report.evidence
+
+
+def test_subprocess_verifier_reports_permission_error_as_failure(tmp_path: Path) -> None:
+    script = tmp_path / "not_executable.sh"
+    script.write_text("#!/bin/sh\nexit 0\n")
+    script.chmod(0o644)
+    report = SubprocessVerifier().run(str(script))
+    assert report.passed is False
+    assert "not_executable.sh" in report.evidence
+
+
+def test_state_store_raises_named_error_on_corrupt_file(tmp_path: Path) -> None:
+    from hcp.reference.state import StateFileError
+
+    path = tmp_path / "state.json"
+    corrupt = '{"records": ['
+    path.write_text(corrupt)
+    store = JsonFileStateStore(path)
+    with pytest.raises(StateFileError) as excinfo:
+        store.read("progress")
+    assert str(path) in str(excinfo.value)
+    assert path.read_text() == corrupt

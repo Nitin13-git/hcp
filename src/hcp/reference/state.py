@@ -8,6 +8,10 @@ from pathlib import Path
 from hcp.state import StateRecord, StateStore
 
 
+class StateFileError(Exception):
+    """The backing state file exists but cannot be parsed."""
+
+
 class JsonFileStateStore(StateStore):
     """Minimal StateStore backed by a single JSON file.
 
@@ -22,7 +26,10 @@ class JsonFileStateStore(StateStore):
             self._path.write_text(json.dumps({"records": [], "checkpoints": {}}))
 
     def _load(self) -> dict:
-        return json.loads(self._path.read_text())
+        try:
+            return json.loads(self._path.read_text())
+        except json.JSONDecodeError as exc:
+            raise StateFileError(f"state file {self._path} is not valid JSON: {exc.msg}") from exc
 
     def _save(self, data: dict) -> None:
         self._path.write_text(json.dumps(data, default=str, indent=2))
