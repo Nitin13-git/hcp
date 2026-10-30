@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,29 @@ class JsonFileStateStore(StateStore):
         except json.JSONDecodeError as exc:
             raise StateFileError(f"state file {self._path} is not valid JSON: {exc.msg}") from exc
 
+    @contextmanager
+    def _locked(self):
+        lock_path = self._path.with_name(self._path.name + ".lock")
+        with open(lock_path, "a+") as lock_file:
+            if os.name == "nt":
+                import msvcrt
+
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+                try:
+                    yield
+                finally:
+                    lock_file.seek(0)
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
     def _save(self, data: dict) -> None:
         fd, tmp = tempfile.mkstemp(dir=self._path.parent, prefix=f".{self._path.name}.", suffix=".tmp")
         try:
@@ -62,9 +86,10 @@ class JsonFileStateStore(StateStore):
 
     def write(self, key: str, value: object, *, by: str) -> StateRecord:
         record = StateRecord(key=key, value=value, by=by, at=datetime.now(timezone.utc))
-        data = self._load()
-        data["records"].append(asdict(record))
-        self._save(data)
+        with self._locked():
+            data = self._load()
+            data["records"].append(asdict(record))
+            self._save(data)
         return record
 
     def history(self, key: str) -> list[StateRecord]:
@@ -80,11 +105,12 @@ class JsonFileStateStore(StateStore):
         ]
 
     def checkpoint(self, label: str) -> str:
-        data = self._load()
-        existing = data["checkpoints"].get(label)
-        if existing is not None:
-            return existing
-        checkpoint_id = f"{label}-{len(data['checkpoints'])}"
-        data["checkpoints"][label] = checkpoint_id
-        self._save(data)
-        return checkpoint_id
+        with self._locked():
+            data = self._load()
+            existing = data["checkpoints"].get(label)
+            if existing is not None:
+                return existing
+            checkpoint_id = f"{label}-{len(data['checkpoints'])}"
+            data["checkpoints"][label] = checkpoint_id
+            self._save(data)
+            return checkpoint_id
