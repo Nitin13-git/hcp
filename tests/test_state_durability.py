@@ -46,3 +46,31 @@ def test_concurrent_writers_do_not_lose_records(tmp_path: Path) -> None:
 
     data = json.loads(Path(path).read_text())
     assert len(data["records"]) == 100
+
+
+def test_saved_state_file_respects_umask(tmp_path: Path) -> None:
+    old = os.umask(0o022)
+    try:
+        path = tmp_path / "state.json"
+        JsonFileStateStore(path).write("k", 1, by="test")
+        assert (path.stat().st_mode & 0o777) == 0o644
+    finally:
+        os.umask(old)
+
+
+def test_save_retries_transient_permission_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "state.json"
+    store = JsonFileStateStore(path)
+    real_replace = os.replace
+    failures = {"left": 2}
+
+    def flaky(src: str, dst: str) -> None:
+        if failures["left"] > 0:
+            failures["left"] -= 1
+            raise PermissionError("file held open by a reader")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", flaky)
+    store.write("k", 1, by="test")
+    assert failures["left"] == 0
+    assert json.loads(path.read_text())["records"][0]["key"] == "k"

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -13,6 +14,27 @@ from hcp.state import StateRecord, StateStore
 
 class StateFileError(Exception):
     """The backing state file exists but cannot be parsed."""
+
+
+_REPLACE_ATTEMPTS = 5
+_REPLACE_RETRY_DELAY_S = 0.05
+
+
+def _umask() -> int:
+    mask = os.umask(0)
+    os.umask(mask)
+    return mask
+
+
+def _replace_with_retry(src: str, dst: Path) -> None:
+    for attempt in range(_REPLACE_ATTEMPTS):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == _REPLACE_ATTEMPTS - 1:
+                raise
+            time.sleep(_REPLACE_RETRY_DELAY_S)
 
 
 class JsonFileStateStore(StateStore):
@@ -64,7 +86,8 @@ class JsonFileStateStore(StateStore):
                 handle.write(json.dumps(data, default=str, indent=2))
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(tmp, self._path)
+            os.chmod(tmp, 0o666 & ~_umask())
+            _replace_with_retry(tmp, self._path)
         except BaseException:
             try:
                 os.unlink(tmp)
