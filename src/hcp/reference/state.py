@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,7 +34,19 @@ class JsonFileStateStore(StateStore):
             raise StateFileError(f"state file {self._path} is not valid JSON: {exc.msg}") from exc
 
     def _save(self, data: dict) -> None:
-        self._path.write_text(json.dumps(data, default=str, indent=2))
+        fd, tmp = tempfile.mkstemp(dir=self._path.parent, prefix=f".{self._path.name}.", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as handle:
+                handle.write(json.dumps(data, default=str, indent=2))
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp, self._path)
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except FileNotFoundError:
+                pass
+            raise
 
     def read(self, key: str) -> StateRecord | None:
         records = [r for r in self._load()["records"] if r["key"] == key]
